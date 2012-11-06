@@ -14,7 +14,28 @@ public final class R {
         public static final int icon=0x7f020000;
     }
     public static final class raw {
-        public static final int lbpcascade_frontalface=0x7f030000;
+        public static final int haarcascade_eye=0x7f030000;
+        public static final int haarcascade_eye_tree_eyeglasses=0x7f030001;
+        public static final int haarcascade_frontalface_alt=0x7f030002;
+        public static final int haarcascade_frontalface_alt2=0x7f030003;
+        public static final int haarcascade_frontalface_alt_tree=0x7f030004;
+        public static final int haarcascade_frontalface_default=0x7f030005;
+        public static final int haarcascade_fullbody=0x7f030006;
+        public static final int haarcascade_lefteye_2splits=0x7f030007;
+        public static final int haarcascade_lowerbody=0x7f030008;
+        public static final int haarcascade_mcs_eyepair_big=0x7f030009;
+        public static final int haarcascade_mcs_eyepair_small=0x7f03000a;
+        public static final int haarcascade_mcs_leftear=0x7f03000b;
+        public static final int haarcascade_mcs_lefteye=0x7f03000c;
+        public static final int haarcascade_mcs_mouth=0x7f03000d;
+        public static final int haarcascade_mcs_nose=0x7f03000e;
+        public static final int haarcascade_mcs_rightear=0x7f03000f;
+        public static final int haarcascade_mcs_righteye=0x7f030010;
+        public static final int haarcascade_mcs_upperbody=0x7f030011;
+        public static final int haarcascade_profileface=0x7f030012;
+        public static final int haarcascade_righteye_2splits=0x7f030013;
+        public static final int haarcascade_upperbody=0x7f030014;
+        public static final int lbpcascade_frontalface=0x7f030015;
     }
     public static final class string {
         public static final int app_name=0x7f040000;

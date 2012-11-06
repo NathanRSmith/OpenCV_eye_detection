@@ -68,9 +68,11 @@ class FdView extends SampleCvViewBase {
         super(context);
 
         try {
-            InputStream is = context.getResources().openRawResource(R.raw.lbpcascade_frontalface);
+//        	InputStream is = context.getResources().openRawResource(R.raw.lbpcascade_frontalface);
+        	InputStream is = context.getResources().openRawResource(R.raw.haarcascade_mcs_righteye);
             File cascadeDir = context.getDir("cascade", Context.MODE_PRIVATE);
-            mCascadeFile = new File(cascadeDir, "lbpcascade_frontalface.xml");
+//            mCascadeFile = new File(cascadeDir, "lbpcascade_frontalface.xml");
+            mCascadeFile = new File(cascadeDir, "haarcascade_mcs_righteye.xml");
             FileOutputStream os = new FileOutputStream(mCascadeFile);
 
             byte[] buffer = new byte[4096];
