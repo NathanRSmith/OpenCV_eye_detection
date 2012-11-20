@@ -27,11 +27,15 @@ import cv2.cv as cv
 #from video import create_capture
 #from common import clock, draw_str
 
+import math
+
 import pdb
 
 help_message = '''
 USAGE: facedetect.py [--facecascade <cascade_fn>] [--eyescascade-facecascade <cascade_fn>] [<video_source>]
 '''
+
+
 
 def detect(img, cascade):
     rects = cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=4, minSize=(30, 30), flags = cv.CV_HAAR_SCALE_IMAGE)
@@ -129,46 +133,45 @@ def processFrame(img, facecascade, eyescascade):
             gray_roileft_eye = gray_roileft[left[1]:left[3], left[0]:left[2]]
             gray_roiright_eye = gray_roiright[right[1]:right[3], right[0]:right[2]]
             
-            #comb = combineEyes(
-            #                    gray_roileft_eye,
-            #                    gray_roiright_eye
-            #                    )
-            #cv2.imshow('combinedeyes', comb)
-            
-            circlesleft = cv2.HoughCircles(gray_roileft_eye, cv2.cv.CV_HOUGH_GRADIENT, 1, 10, param1=100, param2=25, minRadius=5)
-            circleleft = circlesleft[0,0]
-            if circlesleft != None:
-                for i in circlesleft[0,:]:
-                    cv2.circle(vis_roileft_eye,(i[0],i[1]),i[2],(0,255,0),1)  # draw the outer circle
-                    cv2.circle(vis_roileft_eye,(i[0],i[1]),2,(0,0,255),3)     # draw the center of the circle
-            
-            circlesright = cv2.HoughCircles(gray_roiright_eye, cv2.cv.CV_HOUGH_GRADIENT, 1, 10, param1=100, param2=25, minRadius=5)
-            circleright = circlesright[0,0]
-            if circlesright != None:
-                for i in circlesright[0,:]:
-                    cv2.circle(vis_roiright_eye,(i[0],i[1]),i[2],(0,255,0),1)  # draw the outer circle
-                    cv2.circle(vis_roiright_eye,(i[0],i[1]),2,(0,0,255),3)     # draw the center of the circle
-            
-            
-            cv2.circle(gray_roileft_eye,(circleleft[0],circleleft[1]),circleleft[2],(0),-1)
-            
             comb = combineEyes(
                                 gray_roileft_eye,
                                 gray_roiright_eye
                                 )
             cv2.imshow('combinedeyes', comb)
             
-            maskleft = np.zeros((gray_roileft_eye.shape[0]+2,gray_roileft_eye.shape[1]+2), np.uint8)
-            cv2.floodFill(gray_roileft_eye, maskleft, (circleleft[0],circleleft[1]), (255), 10, 6)
-            
-            comb = combineEyes(
-                                gray_roileft_eye,
-                                gray_roiright_eye
-                                )
-            cv2.imshow('floodfilledeyes', comb)
-            
-            
             pdb.set_trace()
+            
+            circleleft = None
+            circleright = None
+            
+            circlesleft = cv2.HoughCircles(gray_roileft_eye, cv2.cv.CV_HOUGH_GRADIENT, 1, 10, param1=100, param2=25, minRadius=5)
+            if circlesleft != None:
+                circleleft = circlesleft[0,0]
+                for i in circlesleft[0,:]:
+                    cv2.circle(vis_roileft_eye,(i[0],i[1]),i[2],(0,255,0),1)  # draw the outer circle
+                    cv2.circle(vis_roileft_eye,(i[0],i[1]),2,(0,0,255),3)     # draw the center of the circle
+            
+            circlesright = cv2.HoughCircles(gray_roiright_eye, cv2.cv.CV_HOUGH_GRADIENT, 1, 10, param1=100, param2=25, minRadius=5)
+            if circlesright != None:
+                circleright = circlesright[0,0]
+                for i in circlesright[0,:]:
+                    cv2.circle(vis_roiright_eye,(i[0],i[1]),i[2],(0,255,0),1)  # draw the outer circle
+                    cv2.circle(vis_roiright_eye,(i[0],i[1]),2,(0,0,255),3)     # draw the center of the circle
+            
+            if circleleft != None and circleright != None:
+                cv2.circle(gray_roileft_eye,(circleleft[0],circleleft[1]),circleleft[2],(0),-1)
+                
+                maskleft = np.zeros((gray_roileft_eye.shape[0]+2,gray_roileft_eye.shape[1]+2), np.uint8)
+                cv2.floodFill(gray_roileft_eye, maskleft, (circleleft[0],circleleft[1]), (255), 10, 6)
+            
+                comb = combineEyes(
+                                    gray_roileft_eye,
+                                    gray_roiright_eye
+                                    )
+                cv2.imshow('floodfilledeyes', comb)
+            
+            
+            #pdb.set_trace()
             
             leftthresh = gray_roileft_eye.copy()
             cv2.adaptiveThreshold(leftthresh, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 99, 5, leftthresh)
@@ -184,6 +187,8 @@ def processFrame(img, facecascade, eyescascade):
                                 vis_roiright_eye
                               )
             cv2.imshow('colorcombinedeyes', combvis)
+            
+            #pdb.set_trace()
         
         #pdb.set_trace()
 
@@ -201,7 +206,7 @@ def processFrame(img, facecascade, eyescascade):
 #		
 #            draw_rects(vis_roi, mouthsubrects, (0, 0, 255))
 
-    #cv2.imshow('facedetect', vis)
+    cv2.imshow('facedetect', vis)
     
     return vis, gray, rects, eyesubrectsleft, eyesubrectsright
 
@@ -260,7 +265,7 @@ if __name__ == '__main__':
                 cv2.imwrite(str(fileindex)+'.png',img)
                 cv2.imwrite(str(fileindex)+'.annotated.png',vis)
                 rindex = 0 
-                if (len(rects) == 0) and (len(eyesubrects) == 0) and (len(mouthsubrects) == 0):
+                if (len(rects) == 0) and (len(eyesubrectsleft) == 0) and (len(eyesubrectsright) == 0) and (len(mouthsubrects) == 0):
                         continue
                 #else
                 f = file(str(fileindex)+'.txt','w')
