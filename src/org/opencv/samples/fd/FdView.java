@@ -23,6 +23,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.RectF;
 import android.util.Log;
 import android.view.Display;
 import android.view.SurfaceHolder;
@@ -46,10 +47,14 @@ class FdView extends SampleCvViewBase {
     private float                 mRelativeFaceSize = 0;
     private int					  mAbsoluteFaceSize = 0;
     
+    protected boolean			  calibrationMode;
+    private int				  	  calibrationPhase = 0;
     private Paint				  calibrationPointPaintOuter;
     private Paint				  calibrationPointPaintInner;
-    
     private ArrayList<Point>      calibrationPoints = new ArrayList<Point>();
+    
+    private RectF				  brightnessRect;
+    private Paint				  brightnessPaint;
     
     public void setMinFaceSize(float faceSize)
     {
@@ -80,6 +85,7 @@ class FdView extends SampleCvViewBase {
         super(context);
 
         try {
+        	calibrationMode = true;
         	
         	calibrationPointPaintOuter = new Paint();
         	calibrationPointPaintOuter.setStyle(Paint.Style.STROKE);
@@ -101,6 +107,13 @@ class FdView extends SampleCvViewBase {
         	calibrationPoints.add(new Point(w,h/2));
         	calibrationPoints.add(new Point(w/2,h));
         	calibrationPoints.add(new Point(w/2,h/2));
+        	
+        	brightnessRect = new RectF(0,0,w,h);
+        	brightnessPaint = new Paint();
+        	brightnessPaint.setStyle(Paint.Style.FILL);
+        	brightnessPaint.setColor(Color.WHITE);
+        	brightnessPaint.setAlpha(150);
+        	
         	
         	
 //        	InputStream is = context.getResources().openRawResource(R.raw.lbpcascade_frontalface);
@@ -198,10 +211,27 @@ class FdView extends SampleCvViewBase {
 	
 	@Override
 	protected void drawCalibrationPoint(Canvas canvas) {
-		for(Point p : calibrationPoints) {
+		if( calibrationMode == true) {
+			Point p = calibrationPoints.get(calibrationPhase);
 			canvas.drawCircle(p.x, p.y, 15, calibrationPointPaintOuter);
 			canvas.drawCircle(p.x, p.y, 5, calibrationPointPaintInner);
 		}
+	}
+	
+	/* Moves to the next calibration phase.  If the current phase is the final one, 
+	 * calibration mode is complete and reset to false.
+	 */
+	private void startNextCalibrationPhase() {
+		calibrationPhase += 1;
+		if( calibrationPhase >= calibrationPoints.size() ) {
+			calibrationMode = false;
+			calibrationPhase = 0;
+		}
+	}
+	
+	@Override
+	protected void drawBrightnessOverlay(Canvas canvas) {
+		canvas.drawRect(brightnessRect, brightnessPaint);
 	}
 
     @Override
