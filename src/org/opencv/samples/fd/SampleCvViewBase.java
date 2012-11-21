@@ -96,6 +96,7 @@ public abstract class SampleCvViewBase extends SurfaceView implements SurfaceHol
     }
 
     protected abstract Bitmap processFrame(VideoCapture capture);
+    protected abstract void drawCalibrationPoint(Canvas canvas);
 
     public void run() {
         Log.i(TAG, "Starting processing thread");
@@ -122,6 +123,7 @@ public abstract class SampleCvViewBase extends SurfaceView implements SurfaceHol
                 Canvas canvas = mHolder.lockCanvas();
                 if (canvas != null) {
                     canvas.drawBitmap(bmp, (canvas.getWidth() - bmp.getWidth()) / 2, (canvas.getHeight() - bmp.getHeight()) / 2, null);
+                    drawCalibrationPoint(canvas);
                     mFps.draw(canvas, (canvas.getWidth() - bmp.getWidth()) / 2, 0);
                     mHolder.unlockCanvasAndPost(canvas);
                 }

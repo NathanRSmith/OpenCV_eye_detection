@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -18,8 +19,14 @@ import org.opencv.objdetect.CascadeClassifier;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Point;
 import android.util.Log;
+import android.view.Display;
 import android.view.SurfaceHolder;
+import android.view.WindowManager;
 
 class FdView extends SampleCvViewBase {
     private static final String   TAG = "Sample::FdView";
@@ -38,6 +45,11 @@ class FdView extends SampleCvViewBase {
 
     private float                 mRelativeFaceSize = 0;
     private int					  mAbsoluteFaceSize = 0;
+    
+    private Paint				  calibrationPointPaintOuter;
+    private Paint				  calibrationPointPaintInner;
+    
+    private ArrayList<Point>      calibrationPoints = new ArrayList<Point>();
     
     public void setMinFaceSize(float faceSize)
     {
@@ -68,6 +80,29 @@ class FdView extends SampleCvViewBase {
         super(context);
 
         try {
+        	
+        	calibrationPointPaintOuter = new Paint();
+        	calibrationPointPaintOuter.setStyle(Paint.Style.STROKE);
+        	calibrationPointPaintOuter.setStrokeWidth(5);
+        	calibrationPointPaintOuter.setColor(Color.RED);
+        	
+        	calibrationPointPaintInner = new Paint();
+        	calibrationPointPaintInner.setStyle(Paint.Style.FILL);
+        	calibrationPointPaintInner.setColor(Color.RED);
+        	
+        	Display disp = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+        	int w = disp.getWidth();
+        	int h = disp.getHeight();
+        	
+        	Log.i("display dimensions", "display dimensions: "+w+", "+h);
+        	
+        	calibrationPoints.add(new Point(w/2,0));
+        	calibrationPoints.add(new Point(0,h/2));
+        	calibrationPoints.add(new Point(w,h/2));
+        	calibrationPoints.add(new Point(w/2,h));
+        	calibrationPoints.add(new Point(w/2,h/2));
+        	
+        	
 //        	InputStream is = context.getResources().openRawResource(R.raw.lbpcascade_frontalface);
         	InputStream is = context.getResources().openRawResource(R.raw.haarcascade_mcs_righteye);
             File cascadeDir = context.getDir("cascade", Context.MODE_PRIVATE);
@@ -160,6 +195,14 @@ class FdView extends SampleCvViewBase {
         
         return bmp;
     }
+	
+	@Override
+	protected void drawCalibrationPoint(Canvas canvas) {
+		for(Point p : calibrationPoints) {
+			canvas.drawCircle(p.x, p.y, 15, calibrationPointPaintOuter);
+			canvas.drawCircle(p.x, p.y, 5, calibrationPointPaintInner);
+		}
+	}
 
     @Override
     public void run() {
