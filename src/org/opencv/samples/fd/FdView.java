@@ -26,6 +26,7 @@ import android.graphics.Point;
 import android.graphics.RectF;
 import android.util.Log;
 import android.view.Display;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.WindowManager;
 
@@ -52,9 +53,17 @@ class FdView extends SampleCvViewBase {
     private Paint				  calibrationPointPaintOuter;
     private Paint				  calibrationPointPaintInner;
     private ArrayList<Point>      calibrationPoints = new ArrayList<Point>();
+    private Paint				  calibrationModeTextPaint;
     
     private RectF				  brightnessRect;
     private Paint				  brightnessPaint;
+    
+    private int					  width;
+    private int					  height;
+    
+    private Point				  gazeLocation = new Point(0,0);
+    private float				  gazeUncertainty;
+    
     
     public void setMinFaceSize(float faceSize)
     {
@@ -96,9 +105,15 @@ class FdView extends SampleCvViewBase {
         	calibrationPointPaintInner.setStyle(Paint.Style.FILL);
         	calibrationPointPaintInner.setColor(Color.RED);
         	
+        	calibrationModeTextPaint = new Paint();
+        	calibrationModeTextPaint.setColor(Color.BLUE);
+        	calibrationModeTextPaint.setTextSize(50);
+        	
         	Display disp = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
         	int w = disp.getWidth();
         	int h = disp.getHeight();
+        	width = w;
+        	height = h;
         	
         	Log.i("display dimensions", "display dimensions: "+w+", "+h);
         	
@@ -215,17 +230,36 @@ class FdView extends SampleCvViewBase {
 			Point p = calibrationPoints.get(calibrationPhase);
 			canvas.drawCircle(p.x, p.y, 15, calibrationPointPaintOuter);
 			canvas.drawCircle(p.x, p.y, 5, calibrationPointPaintInner);
+			
+			canvas.drawText("Calibration Mode", 500, 500, calibrationModeTextPaint);
 		}
+	}
+	
+	@Override
+	public boolean onTouchEvent(MotionEvent e) {
+		
+		switch (e.getAction()) {
+			case MotionEvent.ACTION_DOWN:
+		
+				if( calibrationMode == true ) {
+					startNextCalibrationPhase();
+				}
+				
+		}
+		
+		return true;
 	}
 	
 	/* Moves to the next calibration phase.  If the current phase is the final one, 
 	 * calibration mode is complete and reset to false.
 	 */
 	private void startNextCalibrationPhase() {
-		calibrationPhase += 1;
-		if( calibrationPhase >= calibrationPoints.size() ) {
-			calibrationMode = false;
-			calibrationPhase = 0;
+		if( calibrationMode == true ) {
+			calibrationPhase += 1;
+			if( calibrationPhase >= calibrationPoints.size() ) {
+				calibrationMode = false;
+				calibrationPhase = 0;
+			}
 		}
 	}
 	
