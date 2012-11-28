@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -64,6 +65,16 @@ class FdView extends SampleCvViewBase {
     private Point				  gazeLocation = new Point(0,0);
     private float				  gazeUncertainty;
     
+    private HashMap<String,Object> tabletDims;
+	private double faceDist;
+	private double eyeDist;
+	private double pitchmin;
+	private double pitchmax;
+	private double lefteye_leftmax;
+	private double lefteye_rightmax;
+	private double righteye_leftmax;
+	private double righteye_rightmax;
+	private Paint gazePaint;
     
     public void setMinFaceSize(float faceSize)
     {
@@ -94,6 +105,34 @@ class FdView extends SampleCvViewBase {
         super(context);
 
         try {
+        	
+        	tabletDims = new HashMap<String, Object>();
+        	tabletDims.put("units", "cm");
+        	tabletDims.put("width", 25.0);
+        	tabletDims.put("height", 17.0);
+        	tabletDims.put("border_top", 1.5);
+        	tabletDims.put("border_bottom", 1.5);
+        	tabletDims.put("border_left", 1.5);
+        	tabletDims.put("border_right", 1.5);
+        	tabletDims.put("resolution_width", 1280);
+        	tabletDims.put("resolution_height", 800);
+        	tabletDims.put("camera_postition_x", 12.5);
+        	tabletDims.put("camera_postition_y", .65);
+        	
+        	faceDist = 30.0;
+        	eyeDist = 6.0;
+        	
+        	// angles
+        	pitchmin = Math.atan2((Double)tabletDims.get("border_top"), faceDist);
+        	pitchmax = Math.atan2((Double)tabletDims.get("height") - (Double)tabletDims.get("border_top"), faceDist);
+        	lefteye_leftmax = Math.atan2( ( (Double)tabletDims.get("width") - eyeDist -
+        									((Double)tabletDims.get("border_left") + (Double)tabletDims.get("border_right"))) / 2, faceDist);
+        	lefteye_rightmax = Math.atan2( ( (Double)tabletDims.get("width") + eyeDist -
+											((Double)tabletDims.get("border_left") + (Double)tabletDims.get("border_right"))) / 2, faceDist);
+        	righteye_leftmax = lefteye_rightmax;
+        	righteye_rightmax = lefteye_leftmax;
+        	
+        	
         	calibrationMode = true;
         	
         	calibrationPointPaintOuter = new Paint();
@@ -129,6 +168,9 @@ class FdView extends SampleCvViewBase {
         	brightnessPaint.setColor(Color.WHITE);
         	brightnessPaint.setAlpha(150);
         	
+        	gazePaint = new Paint();
+        	gazePaint.setStyle(Paint.Style.FILL);
+        	gazePaint.setColor(Color.CYAN);
         	
         	
 //        	InputStream is = context.getResources().openRawResource(R.raw.lbpcascade_frontalface);
@@ -162,6 +204,47 @@ class FdView extends SampleCvViewBase {
             Log.e(TAG, "Failed to load cascade. Exception thrown: " + e);
         }
     }
+    
+    public void drawGazeLocation(Canvas canvas, Point loc, float uncertainty) {
+    	canvas.drawCircle(loc.x, loc.y, uncertainty, gazePaint);
+    }
+    
+    public Point findGazeLocation(Double lefteye_yaw, Double lefteye_pitch, Double righteye_yaw, Double righteye_pitch, String units) {
+    	if( units == "deg" ) {
+    		lefteye_yaw = lefteye_yaw * Math.PI / 180.0;
+    		lefteye_pitch = lefteye_pitch * Math.PI / 180.0;
+    		righteye_yaw = righteye_yaw * Math.PI / 180.0;
+    		righteye_pitch = righteye_pitch * Math.PI / 180.0;
+    	}
+    	
+    	Double lefteye_x = (Double)tabletDims.get("width")/2 - eyeDist/2 + faceDist*Math.tan(lefteye_yaw);
+    	Double righteye_x = (Double)tabletDims.get("width")/2 - eyeDist/2 + faceDist*Math.tan(righteye_yaw);
+    	Double ave_x = (lefteye_x + righteye_x) / 2;
+    	
+    	// if the gaze location is outside of screen area
+    	if( ave_x < (Double)tabletDims.get("border_left") || ave_x > (Double)tabletDims.get("width") - (Double)tabletDims.get("border_right") ) {
+    		return new Point(-1,-1);
+    	}
+    	
+    	Double lefteye_y = faceDist * Math.tan(lefteye_pitch);
+        Double righteye_y = faceDist * Math.tan(righteye_pitch);
+        Double ave_y = (lefteye_y + righteye_y) / 2;
+        
+        // if the gaze location is outside of screen area
+        if( ave_y < (Double)tabletDims.get("border_top") || ave_y > (Double)tabletDims.get("height") - (Double)tabletDims.get("border_bottom") ) {
+        	return new Point(-1,-1);
+        }
+        
+        Double px_x = ( (ave_x - (Double)tabletDims.get("border_left")) / ((Double)tabletDims.get("width") - (Double)tabletDims.get("border_left") - (Double)tabletDims.get("border_right")) ) * (Double)tabletDims.get("resolution_width");
+        Double px_y = ( (ave_y - (Double)tabletDims.get("border_top")) / ((Double)tabletDims.get("height") - (Double)tabletDims.get("border_top") - (Double)tabletDims.get("border_bottom")) ) * (Double)tabletDims.get("resolution_height");
+    	
+    	return new Point(px_x.intValue(), px_y.intValue());
+    }
+    
+    public Point findGazeLocation(Double lefteye_yaw, Double lefteye_pitch, Double righteye_yaw, Double righteye_pitch) {
+    	return findGazeLocation(lefteye_yaw, lefteye_pitch, righteye_yaw, righteye_pitch, "rad");
+    }
+    
 
     @Override
 	public void surfaceCreated(SurfaceHolder holder) {
