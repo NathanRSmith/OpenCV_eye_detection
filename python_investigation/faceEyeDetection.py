@@ -27,7 +27,11 @@ import cv2.cv as cv
 #from video import create_capture
 #from common import clock, draw_str
 
+from random import randrange
+
 import math
+
+from pupilIsolation import *
 
 import pdb
 
@@ -139,7 +143,7 @@ def processFrame(img, facecascade, eyescascade):
                                 )
             cv2.imshow('combinedeyes', comb)
             
-            pdb.set_trace()
+            #pdb.set_trace()
             
             circleleft = None
             circleright = None
@@ -158,35 +162,51 @@ def processFrame(img, facecascade, eyescascade):
                     cv2.circle(vis_roiright_eye,(i[0],i[1]),i[2],(0,255,0),1)  # draw the outer circle
                     cv2.circle(vis_roiright_eye,(i[0],i[1]),2,(0,0,255),3)     # draw the center of the circle
             
-            if circleleft != None and circleright != None:
-                cv2.circle(gray_roileft_eye,(circleleft[0],circleleft[1]),circleleft[2],(0),-1)
-                
-                maskleft = np.zeros((gray_roileft_eye.shape[0]+2,gray_roileft_eye.shape[1]+2), np.uint8)
-                cv2.floodFill(gray_roileft_eye, maskleft, (circleleft[0],circleleft[1]), (255), 10, 6)
-            
-                comb = combineEyes(
-                                    gray_roileft_eye,
-                                    gray_roiright_eye
-                                    )
-                cv2.imshow('floodfilledeyes', comb)
+            #if circleleft != None and circleright != None:
+            #    
+            #    #cv2.findContour
+            #    
+            #    #cv2.circle(gray_roileft_eye,(circleleft[0],circleleft[1]),circleleft[2],(0),-1)
+            #    #
+            #    #maskleft = np.zeros((gray_roileft_eye.shape[0]+2,gray_roileft_eye.shape[1]+2), np.uint8)
+            #    #cv2.floodFill(gray_roileft_eye, maskleft, (circleleft[0],circleleft[1]), (255), 10, 6)
+            #
+            #    comb = combineEyes(
+            #                        gray_roileft_eye,
+            #                        gray_roiright_eye
+            #                        )
+            #    cv2.imshow('floodfilledeyes', comb)
             
             
             #pdb.set_trace()
             
             leftthresh = gray_roileft_eye.copy()
-            cv2.adaptiveThreshold(leftthresh, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 99, 5, leftthresh)
+            #cv2.adaptiveThreshold(leftthresh, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 25, 25, leftthresh)
+            leftthresh = thresholdByPercentage(leftthresh, .075)
             
             rightthresh = gray_roiright_eye.copy()
-            cv2.adaptiveThreshold(rightthresh, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 99, 5, rightthresh)
+            #cv2.adaptiveThreshold(rightthresh, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 25, 25, rightthresh)
+            rightthresh = thresholdByPercentage(rightthresh, .075)
+            
+            
+            #contours, heirarchy = cv2.findContours(leftthresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+            
+            #pdb.set_trace()
+            
+            #for idx in range(len(contours)):
+            #        
+            #    clr = (randrange(0, 255), randrange(0, 255), randrange(0, 255))
+            #    cv2.drawContours(vis_roileft_eye, contours, idx, clr, -1)
+            
             
             combthresh = combineEyes(leftthresh, rightthresh)
             cv2.imshow('combinedthresh', combthresh)
             
-            combvis = combineEyes(
-                                vis_roileft_eye,
-                                vis_roiright_eye
-                              )
-            cv2.imshow('colorcombinedeyes', combvis)
+            #combvis = combineEyes(
+            #                    vis_roileft_eye,
+            #                    vis_roiright_eye
+            #                  )
+            #cv2.imshow('colorcombinedeyes', combvis)
             
             #pdb.set_trace()
         
@@ -229,8 +249,8 @@ if __name__ == '__main__':
     mouthcascade = cv2.CascadeClassifier(mouth_fn)
     
     
-    mode = 'picture'
-    #mode = 'video'
+    #mode = 'picture'
+    mode = 'video'
     #source = 'imgs/IMG_20121112_121434.jpg'
     #source = 'imgs/IMG_20121112_121455.jpg'
     #source = 'imgs/IMG_20121112_121522.jpg'
