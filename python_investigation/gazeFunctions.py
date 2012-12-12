@@ -49,7 +49,7 @@ def findGazeLocation(lefteye_yaw, lefteye_pitch, righteye_yaw, righteye_pitch, u
         righteye_yaw = righteye_yaw * math.pi / 180.0
         righteye_pitch = righteye_pitch * math.pi / 180.0
     
-    pdb.set_trace()
+    #pdb.set_trace()
     
     lefteye_x = tabletDims['width']/2 - eye_dist/2 + face_dist*math.tan(lefteye_yaw)
     righteye_x = tabletDims['width']/2 + eye_dist/2 + face_dist*math.tan(righteye_yaw)
@@ -72,8 +72,22 @@ def findGazeLocation(lefteye_yaw, lefteye_pitch, righteye_yaw, righteye_pitch, u
     
     return (px_x, px_y)
     
+
+def processEllipse(ellipseBox):
+    """
+    center: x, y
+    size: width, height (major, minor)
+    angle: rotation angle in deg from vert rotated clockwise
+    """
+    center, size, angle = ellipseBox
     
+    
+    
+    
+
+
     
 if __name__ == '__main__':
-    print findGazeLocation(15.0,25.0,12.0,25.0,'deg')
+    #print findGazeLocation(15.0,25.0,12.0,25.0,'deg')
+    print processEllise(((45.887634, 27.060354), (16.731773, 23.523066), 16.967484))
 

@@ -106,7 +106,26 @@ def combineEyes(left, right):
     
     return comb
 
-def processEye(eyesubrects, vis_roi, gray_roi):
+
+def processEyeByCorners(eyesubrect, vis_roi, gray_roi, vis, gray):
+    """Expand eye roi by certain amount to ensure eye corners in view.
+    Get corners from good features to track (leftmost/rightmost possibly).
+    Get iris/pupil center either from hough circles or contour method previous explored.
+    Find uncorrected gaze direction from amount below line connecting corners
+    """
+    
+    # expand roi
+    
+
+
+def getUncorrectedAnglesFromEllipse():
+    pass
+
+def processEllipse(ellipseBox):
+    """
+    """
+
+def processEye(eyesubrect, vis_roi, gray_roi, vis, gray):
     """threshold
     get contours
     find largest
@@ -203,8 +222,8 @@ def processFrame(img, facecascade, eyescascade):
                                 )
             cv2.imshow('combinedeyes', comb)
             
-            leftthresh, leftEllipseBox = processEye(eyesubrectsleft, vis_roileft_eye, gray_roileft_eye)
-            rightthresh, rightEllipseBox = processEye(eyesubrectsright, vis_roiright_eye, gray_roiright_eye)
+            leftthresh, leftEllipseBox = processEye(eyesubrectleft, vis_roileft_eye, gray_roileft_eye, vis, gray)
+            rightthresh, rightEllipseBox = processEye(eyesubrectright, vis_roiright_eye, gray_roiright_eye, vis, gray)
             
             combthresh = combineEyes(leftthresh, rightthresh)
             cv2.imshow('combinedthresh', combthresh)
@@ -288,13 +307,11 @@ if __name__ == '__main__':
     except: video_src = 0
     args = dict(args)
     cascade_fn = args.get('--facecascade', "data/haarcascades/haarcascade_frontalface_alt.xml")
-    eyes_fn  = args.get('--eyescascade-facecascade', "data/haarcascades/haarcascade_eye.xml")
-    #eyes_fn  = args.get('--eyescascade-facecascade', "data/haarcascades/haarcascade_eye_tree_eyeglasses.xml")
-    mouth_fn  = "data/haarcascades/haarcascade_mcs_mouth.xml"
-
+    #eyes_fn  = args.get('--eyescascade-facecascade', "data/haarcascades/haarcascade_eye.xml")
+    eyes_fn  = args.get('--eyescascade-facecascade', "data/haarcascades/haarcascade_mcs_eyepair_big.xml")
+    
     facecascade = cv2.CascadeClassifier(cascade_fn)
     eyescascade = cv2.CascadeClassifier(eyes_fn)
-    mouthcascade = cv2.CascadeClassifier(mouth_fn)
     
     
     #mode = 'picture'

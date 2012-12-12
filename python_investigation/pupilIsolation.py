@@ -31,7 +31,7 @@ def thresholdByPercentage(img, percentage):
             threshVal = hist[1][i]
             break
     
-    print threshVal
+    #print threshVal
     #pdb.set_trace()
     
     retval, threshimg = cv2.threshold(img, threshVal, 255, cv2.THRESH_BINARY_INV)
