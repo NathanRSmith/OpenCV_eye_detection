@@ -108,13 +108,19 @@ def combineEyes(left, right):
 
 
 def processEyeByCorners(eyesubrect, vis_roi, gray_roi, vis, gray):
-    """Expand eye roi by certain amount to ensure eye corners in view.
-    Get corners from good features to track (leftmost/rightmost possibly).
+    """Get corners from good features to track (leftmost/rightmost possibly).
     Get iris/pupil center either from hough circles or contour method previous explored.
     Find uncorrected gaze direction from amount below line connecting corners
     """
     
-    # expand roi
+    # get corners
+    corners = cv2.goodFeaturesToTrack(gray_roi, 10, .1, gray_roi.shape[0]/1.75)
+    
+    #pdb.set_trace()
+    
+    for corner in corners:
+        cv2.circle(vis_roi, tuple(corner[0]), 2, (0,255,0), -1)
+    
     
 
 
@@ -157,7 +163,7 @@ def processEye(eyesubrect, vis_roi, gray_roi, vis, gray):
     
     return thresh, ellipseBox
 
-def processFrame(img, facecascade, eyescascade):
+def processFrame(img, facecascade, lefteyecascade, righteyecascade):
     """Process a single frame.
     """
     
@@ -191,14 +197,14 @@ def processFrame(img, facecascade, eyescascade):
         roileft = gray[y1:(y1+y2)/2, x1:(x1+x2)/2]
         vis_roileft = vis[y1:(y1+y2)/2, x1:(x1+x2)/2]
         gray_roileft = gray[y1:(y1+y2)/2, x1:(x1+x2)/2]
-        eyesubrectsleft = detect(roileft.copy(), eyescascade)
+        eyesubrectsleft = detect(roileft.copy(), lefteyecascade)
         draw_rects(vis_roileft, eyesubrectsleft, (255, 0, 0))
         
         # right eye
         roiright = gray[y1:(y1+y2)/2, (x1+x2)/2:x2]
         vis_roiright = vis[y1:(y1+y2)/2, (x1+x2)/2:x2]
         gray_roiright = gray[y1:(y1+y2)/2, (x1+x2)/2:x2]
-        eyesubrectsright = detect(roiright.copy(), eyescascade)
+        eyesubrectsright = detect(roiright.copy(), righteyecascade)
         draw_rects(vis_roiright, eyesubrectsright, (255, 0, 0))
         
         # if left and right eyes detected
@@ -222,11 +228,14 @@ def processFrame(img, facecascade, eyescascade):
                                 )
             cv2.imshow('combinedeyes', comb)
             
-            leftthresh, leftEllipseBox = processEye(eyesubrectleft, vis_roileft_eye, gray_roileft_eye, vis, gray)
-            rightthresh, rightEllipseBox = processEye(eyesubrectright, vis_roiright_eye, gray_roiright_eye, vis, gray)
+            processEyeByCorners(eyesubrectleft, vis_roileft_eye, gray_roileft_eye, vis, gray)
             
-            combthresh = combineEyes(leftthresh, rightthresh)
-            cv2.imshow('combinedthresh', combthresh)
+            
+            #leftthresh, leftEllipseBox = processEye(eyesubrectleft, vis_roileft_eye, gray_roileft_eye, vis, gray)
+            #rightthresh, rightEllipseBox = processEye(eyesubrectright, vis_roiright_eye, gray_roiright_eye, vis, gray)
+            #
+            #combthresh = combineEyes(leftthresh, rightthresh)
+            #cv2.imshow('combinedthresh', combthresh)
             
             
             
@@ -308,10 +317,12 @@ if __name__ == '__main__':
     args = dict(args)
     cascade_fn = args.get('--facecascade', "data/haarcascades/haarcascade_frontalface_alt.xml")
     #eyes_fn  = args.get('--eyescascade-facecascade', "data/haarcascades/haarcascade_eye.xml")
-    eyes_fn  = args.get('--eyescascade-facecascade', "data/haarcascades/haarcascade_mcs_eyepair_big.xml")
+    lefteye_fn  = args.get('--eyescascade-facecascade', "data/haarcascades/haarcascade_mcs_lefteye.xml")
+    righteye_fn  = args.get('--eyescascade-facecascade', "data/haarcascades/haarcascade_mcs_righteye.xml")
     
     facecascade = cv2.CascadeClassifier(cascade_fn)
-    eyescascade = cv2.CascadeClassifier(eyes_fn)
+    lefteyecascade = cv2.CascadeClassifier(lefteye_fn)
+    righteyecascade = cv2.CascadeClassifier(righteye_fn)
     
     
     #mode = 'picture'
@@ -328,7 +339,7 @@ if __name__ == '__main__':
     
     if mode == 'picture':
         img = cv2.imread(source)
-        processFrame(img, facecascade, eyescascade)
+        processFrame(img, facecascade, lefteyecascade, righteyecascade)
         
         #pdb.set_trace()
     
@@ -342,7 +353,7 @@ if __name__ == '__main__':
         while True:
             ret, img = cam.read()
             
-            vis, gray, facerect, eyesubrectleft, eyesubrectright, leftEllipseBox, rightEllipseBox = processFrame(img, facecascade, eyescascade)
+            vis, gray, facerect, eyesubrectleft, eyesubrectright, leftEllipseBox, rightEllipseBox = processFrame(img, facecascade, lefteyecascade, righteyecascade)
             
             #pdb.set_trace()
             
