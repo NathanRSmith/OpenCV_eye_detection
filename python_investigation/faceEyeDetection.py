@@ -114,7 +114,7 @@ def processEyeByCorners(eyesubrect, vis_roi, gray_roi, vis, gray):
     """
     
     # get corners
-    corners = cv2.goodFeaturesToTrack(gray_roi, 10, .1, gray_roi.shape[0]/1.75)
+    corners = cv2.goodFeaturesToTrack(gray_roi, 10, .1, gray_roi.shape[0]/1.75, useHarrisDetector=True)
     
     #pdb.set_trace()
     
