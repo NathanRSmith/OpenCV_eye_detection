@@ -1,6 +1,0 @@
-For image file 0.png:
-face rect: (454, 47) -> (906, 499)
-left eye rect: (100, 146) -> (156, 202)
-left eye ellipse: center: (45.887634, 27.060354), size: (16.731773, 23.523066), angle: 16.967484
-right eye rect: (61, 152) -> (116, 207)
-right eye ellipse: center: (24.498468, 25.470642), size: (21.287077, 24.897375), angle: 121.244339

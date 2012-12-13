@@ -46,8 +46,10 @@ def findPointOnPupil(img):
     history = deque([img.copy(),img.copy()])
     curr = img
     
+    kernel = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
+    
     while not isUniform(curr):
-        curr = cv2.erode(curr)
+        curr = cv2.erode(curr, kernel)
         history.append(curr.copy())
         history.popleft()
     

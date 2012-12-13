@@ -30,8 +30,21 @@ import cv2.cv as cv
 from random import randrange
 
 import math
+import time
 
 from pupilIsolation import *
+from gazeFunctions import *
+
+
+###### For moving mouse to test gaze location. Only works for osx ######
+#import objc
+#bndl = objc.loadBundle('CoreGraphics', globals(), '/System/Library/Frameworks/ApplicationServices.framework')
+#objc.loadBundleFunctions(bndl, globals(), [('CGWarpMouseCursorPosition', 'v{CGPoint=ff}')])
+#
+#def mousemove(x, y):
+#    CGWarpMouseCursorPosition((float(x), float(y)))
+
+
 
 import pdb
 
@@ -114,14 +127,62 @@ def processEyeByCorners(eyesubrect, vis_roi, gray_roi, vis, gray):
     """
     
     # get corners
-    corners = cv2.goodFeaturesToTrack(gray_roi, 10, .1, gray_roi.shape[0]/1.75, useHarrisDetector=True)
+    corners = cv2.goodFeaturesToTrack(gray_roi, 20, .001, gray_roi.shape[0]/4, useHarrisDetector=False)
     
     #pdb.set_trace()
+    h, w = gray_roi.shape
     
-    for corner in corners:
-        cv2.circle(vis_roi, tuple(corner[0]), 2, (0,255,0), -1)
+    ######### Eye corners #########
     
+    leftmostx, rightmostx = w/2, w/2
+    leftmostIdx, rightmostIdx = None, None
+    leftCorner, rightCorner = None, None
+    pupilRelativeCenter = None
     
+    for i in range(len(corners)):
+        x, y = corners[i][0]
+        if ( x<(w/5) or x>((w/4)*3) ) and (y>int(h*0.45) and y<int(h*0.65)):
+            # get leftmost and right most points
+            if x < leftmostx:
+                leftmostx = x
+                leftmostIdx = i
+            if x > rightmostx:
+                rightmostx = x
+                rightmostIdx = i
+            
+            cv2.circle(vis_roi, tuple(corners[i][0]), 2, (0,255,0), -1)
+    
+    # display left and right
+    if leftmostIdx != None:
+        leftCorner = tuple(corners[leftmostIdx][0])
+        cv2.circle(vis_roi, leftCorner, 2, (0,0,255), -1)
+    if rightmostIdx != None:
+        rightCorner = tuple(corners[rightmostIdx][0])
+        cv2.circle(vis_roi, rightCorner, 2, (0,0,255), -1)
+    
+    if leftCorner != None and rightCorner != None:
+        
+        # find pupil/iris center via shrink method & look for circles near that center
+        
+        # apply threshold
+        thresh = gray_roi.copy()
+        #cv2.adaptiveThreshold(leftthresh, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 25, 25, leftthresh)
+        thresh = thresholdByPercentage(thresh, .075)
+        
+        pupilCenter = findPointOnPupil(thresh)
+        cv2.circle(vis_roi, pupilCenter, 2, (255,0,0), -1)
+        
+        # get eye corner center x, y
+        x = (leftCorner[0] + rightCorner[0])/2
+        y = (leftCorner[1] + rightCorner[1])/2
+        cornersCenter = (x, y)
+        
+        pupilRelativeCenter = (
+            pupilCenter[0] - cornersCenter[0],
+            pupilCenter[1] - cornersCenter[1]
+        )
+        
+    return pupilRelativeCenter
 
 
 def getUncorrectedAnglesFromEllipse():
@@ -209,9 +270,24 @@ def processFrame(img, facecascade, lefteyecascade, righteyecascade):
         
         # if left and right eyes detected
         if len(eyesubrectsleft) > 0 and len(eyesubrectsright) > 0:
-            # take first eye detected on each side
-            eyesubrectleft = eyesubrectsleft[0] 
-            eyesubrectright = eyesubrectsright[0]
+            # take largest eye detected on each side
+            maxsize = 0
+            maxidx = 0
+            for i in range(len(eyesubrectsleft)):
+                a = rectArea(eyesubrectsleft[i])
+                if maxsize < a:
+                    maxsize = a
+                    maxidx = i
+            eyesubrectleft = eyesubrectsleft[maxidx]
+            
+            maxsize = 0
+            maxidx = 0
+            for i in range(len(eyesubrectsright)):
+                a = rectArea(eyesubrectsright[i])
+                if maxsize < a:
+                    maxsize = a
+                    maxidx = i
+            eyesubrectright = eyesubrectsright[maxidx]
             
             # slice from color img
             vis_roileft_eye = vis_roileft[eyesubrectleft[1]:eyesubrectleft[3], eyesubrectleft[0]:eyesubrectleft[2]]
@@ -228,7 +304,13 @@ def processFrame(img, facecascade, lefteyecascade, righteyecascade):
                                 )
             cv2.imshow('combinedeyes', comb)
             
-            processEyeByCorners(eyesubrectleft, vis_roileft_eye, gray_roileft_eye, vis, gray)
+            leftpupil = processEyeByCorners(eyesubrectleft, vis_roileft_eye, gray_roileft_eye, vis, gray)
+            rightpupil = processEyeByCorners(eyesubrectright, vis_roiright_eye, gray_roiright_eye, vis, gray)
+            
+            if leftpupil != None and rightpupil != None:
+                leftyaw, leftpitch, rightyaw, rightpitch = getAnglesFromPupilRelativeCenter(leftpupil, rightpupil, dummyCalibrationPoints, fliplr=True)
+                gazeloc = findGazeLocation(leftyaw, leftpitch, rightyaw, rightpitch)
+                print gazeloc
             
             
             #leftthresh, leftEllipseBox = processEye(eyesubrectleft, vis_roileft_eye, gray_roileft_eye, vis, gray)
@@ -307,7 +389,7 @@ def writeline(f,line):
     f.write(line+'\n')
 
 
-if __name__ == '__main__':
+def main():
     import sys, getopt
     print help_message
 
@@ -364,7 +446,8 @@ if __name__ == '__main__':
                 cv2.imwrite(str(fileindex)+'.vis.png',vis)
                 cv2.imwrite(str(fileindex)+'.gray.png',gray)
                 rindex = 0 
-                if facerect != None and eyesubrectleft != None and eyesubrectright != None and leftEllipseBox != None and rightEllipseBox != None:
+                #if facerect != None and eyesubrectleft != None and eyesubrectright != None and leftEllipseBox != None and rightEllipseBox != None:
+                if facerect != None and eyesubrectleft != None and eyesubrectright != None:
                     with file(str(fileindex)+'.txt','w') as f:
                         writeline(f,'For image file %d.png:' % fileindex)
                         # face
@@ -372,11 +455,11 @@ if __name__ == '__main__':
                         
                         # left
                         writeline(f,'left eye rect: (%d, %d) -> (%d, %d)' % tuple(eyesubrectleft))
-                        writeline(f, 'left eye ellipse: center: (%f, %f), size: (%f, %f), angle: %f' % (leftEllipseBox[0][0],leftEllipseBox[0][1],leftEllipseBox[1][0],leftEllipseBox[1][1],leftEllipseBox[2]))
+                        #writeline(f, 'left eye ellipse: center: (%f, %f), size: (%f, %f), angle: %f' % (leftEllipseBox[0][0],leftEllipseBox[0][1],leftEllipseBox[1][0],leftEllipseBox[1][1],leftEllipseBox[2]))
                         
                         # right
                         writeline(f,'right eye rect: (%d, %d) -> (%d, %d)' % tuple(eyesubrectright))
-                        writeline(f, 'right eye ellipse: center: (%f, %f), size: (%f, %f), angle: %f' % (rightEllipseBox[0][0],rightEllipseBox[0][1],rightEllipseBox[1][0],rightEllipseBox[1][1],rightEllipseBox[2]))
+                        #writeline(f, 'right eye ellipse: center: (%f, %f), size: (%f, %f), angle: %f' % (rightEllipseBox[0][0],rightEllipseBox[0][1],rightEllipseBox[1][0],rightEllipseBox[1][1],rightEllipseBox[2]))
                         
                         
                         
@@ -388,3 +471,18 @@ if __name__ == '__main__':
 
     cv2.destroyAllWindows()
 
+if __name__ == '__main__':
+    main()
+    
+    #mousemove(50,50)
+    #time.sleep(1)
+    #mousemove(150,50)
+    #time.sleep(1)
+    #mousemove(50,150)
+    #time.sleep(1)
+    #mousemove(250,50)
+    #time.sleep(1)
+    #mousemove(50,250)
+    #time.sleep(1)
+    #mousemove(500,500)
+    
