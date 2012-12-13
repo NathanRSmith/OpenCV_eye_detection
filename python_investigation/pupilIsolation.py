@@ -77,22 +77,16 @@ def isUniform(img):
     #return hist[0][i] == (img.shape[0]*img.shape[1])
     return img.max() == img.min()
 
-def main():
+
+
+if __name__ == '__main__':
     IMG = 'eyes.tiff'
-    
     img = cv2.imread(IMG, cv2.IMREAD_GRAYSCALE)
-    
     cv2.imshow('orig', img)
     
     threshimg = thresholdByPercentage(img, .3)
-    
     cv2.imshow('percthresh', threshimg)
     
     cv2.imwrite('eyetest.tiff',threshimg)
     
     pdb.set_trace()
-
-
-
-if __name__ == '__main__':
-    main()

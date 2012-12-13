@@ -35,13 +35,28 @@ righteye_rightmax = (-1)*lefteye_leftmax
 
 dummyCalibrationPoints = [
     {
+        'left_eye': (-20, -10),
+        'right_eye': (-20, -10),
+    },
+    {
+        'left_eye': (20, -10),
+        'right_eye': (20, -10),
+    },
+    {
+        'left_eye': (0, 0),
+        'right_eye': (0, 0),
+    },
+    {
+        'left_eye': (0, -20),
+        'right_eye': (0, -20),
+    },
+]
+
+calibrationInfo = [
+    {
         'name': 'left', # left direction is actually right side of img
         'screen_pos_x': 0,
         'screen_pos_y': 400,
-        'left_eye_relative_x': -20,
-        'left_eye_relative_y': -10,
-        'right_eye_relative_x': -20,
-        'right_eye_relative_y': -10,
         'left_eye_yaw': lefteye_leftmax,
         'left_eye_pitch': (pitchmax+pitchmin)/2,
         'right_eye_yaw': righteye_leftmax,
@@ -51,10 +66,6 @@ dummyCalibrationPoints = [
         'name': 'right', # right direction is actually left side of img
         'screen_pos_x': 1280,
         'screen_pos_y': 400,
-        'left_eye_relative_x': 20,
-        'left_eye_relative_y': -10,
-        'right_eye_relative_x': 20,
-        'right_eye_relative_y': -10,
         'left_eye_yaw': lefteye_rightmax,
         'left_eye_pitch': (pitchmax+pitchmin)/2,
         'right_eye_yaw': righteye_rightmax,
@@ -64,10 +75,6 @@ dummyCalibrationPoints = [
         'name': 'top',
         'screen_pos_x': 640,
         'screen_pos_y': 0,
-        'left_eye_relative_x': 0,
-        'left_eye_relative_y': 0,
-        'right_eye_relative_x': 0,
-        'right_eye_relative_y': 0,
         'left_eye_yaw': 0,
         'left_eye_pitch': pitchmin,
         'right_eye_yaw': 0,
@@ -77,10 +84,6 @@ dummyCalibrationPoints = [
         'name': 'bottom',
         'screen_pos_x': 640,
         'screen_pos_y': 800,
-        'left_eye_relative_x': 0,
-        'left_eye_relative_y': -20,
-        'right_eye_relative_x': 0,
-        'right_eye_relative_y': -20,
         'left_eye_yaw': 0,
         'left_eye_pitch': pitchmax,
         'right_eye_yaw': 0,
@@ -88,7 +91,7 @@ dummyCalibrationPoints = [
     }
 ]
 
-def getAnglesFromPupilRelativeCenter(leftPupil, rightPupil, calibrationPoints, fliplr=True):
+def getAnglesFromPupilRelativeCenter(leftPupil, rightPupil, calibrationInfo, calibrationPoints, fliplr=True):
     """Compare pupil location to calibration points and come up with yaw and pitch.
     Start with left eye
     """
@@ -104,23 +107,23 @@ def getAnglesFromPupilRelativeCenter(leftPupil, rightPupil, calibrationPoints, f
     
     ###### process leftyaw (x component) ######
     # get slope of relationship between calibration points x and leftyaw (assume linear)
-    yawslope = ((calibrationPoints[0]['left_eye_yaw'] - calibrationPoints[1]['left_eye_yaw']) /
-                (calibrationPoints[0]['left_eye_relative_x'] - calibrationPoints[1]['left_eye_relative_x']))
+    yawslope = ((calibrationInfo[0]['left_eye_yaw'] - calibrationInfo[1]['left_eye_yaw']) /
+                (calibrationPoints[0]['left_eye'][0] - calibrationPoints[1]['left_eye'][0]))
     leftyaw = yawslope*leftPupil[0]
     
-    yawslope = ((calibrationPoints[0]['right_eye_yaw'] - calibrationPoints[1]['right_eye_yaw']) /
-                (calibrationPoints[0]['right_eye_relative_x'] - calibrationPoints[1]['right_eye_relative_x']))
+    yawslope = ((calibrationInfo[0]['right_eye_yaw'] - calibrationInfo[1]['right_eye_yaw']) /
+                (calibrationPoints[0]['right_eye'][0] - calibrationPoints[1]['right_eye'][0]))
     rightyaw = yawslope*rightPupil[0]
     
     #pdb.set_trace()
     
     ###### process leftpitch (y component) ######
-    pitchslope = ((calibrationPoints[2]['left_eye_pitch'] - calibrationPoints[3]['left_eye_pitch']) /
-                (calibrationPoints[2]['left_eye_relative_y'] - calibrationPoints[3]['left_eye_relative_y']))
+    pitchslope = ((calibrationInfo[2]['left_eye_pitch'] - calibrationInfo[3]['left_eye_pitch']) /
+                (calibrationPoints[2]['left_eye'][1] - calibrationPoints[3]['left_eye'][1]))
     leftpitch = pitchslope*leftPupil[1]
     
-    pitchslope = ((calibrationPoints[2]['right_eye_pitch'] - calibrationPoints[3]['right_eye_pitch']) /
-                (calibrationPoints[2]['right_eye_relative_y'] - calibrationPoints[3]['right_eye_relative_y']))
+    pitchslope = ((calibrationInfo[2]['right_eye_pitch'] - calibrationInfo[3]['right_eye_pitch']) /
+                (calibrationPoints[2]['right_eye'][1] - calibrationPoints[3]['right_eye'][1]))
     rightpitch = pitchslope*rightPupil[1]
     
     return leftyaw, leftpitch, rightyaw, rightpitch
@@ -165,7 +168,7 @@ def findGazeLocation(lefteye_yaw, lefteye_pitch, righteye_yaw, righteye_pitch, u
     px_x = ( (ave_x - tabletDims['border']['left']) / (tabletDims['width'] - tabletDims['border']['left'] - tabletDims['border']['right']) ) * tabletDims['resolution']['width']
     px_y = ( (ave_y - tabletDims['border']['top']) / (tabletDims['height'] - tabletDims['border']['top'] - tabletDims['border']['bottom']) ) * tabletDims['resolution']['height']
     
-    return (px_x, px_y)
+    return (int(px_x), int(px_y))
     
 
     

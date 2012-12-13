@@ -27,22 +27,16 @@ import cv2.cv as cv
 #from video import create_capture
 #from common import clock, draw_str
 
+import sys, getopt, os
+
 from random import randrange
 
 import math
 import time
 
-from pupilIsolation import *
-from gazeFunctions import *
+import pupilIsolation
+import gazeFunctions
 
-
-###### For moving mouse to test gaze location. Only works for osx ######
-#import objc
-#bndl = objc.loadBundle('CoreGraphics', globals(), '/System/Library/Frameworks/ApplicationServices.framework')
-#objc.loadBundleFunctions(bndl, globals(), [('CGWarpMouseCursorPosition', 'v{CGPoint=ff}')])
-#
-#def mousemove(x, y):
-#    CGWarpMouseCursorPosition((float(x), float(y)))
 
 
 
@@ -167,9 +161,9 @@ def processEyeByCorners(eyesubrect, vis_roi, gray_roi, vis, gray):
         # apply threshold
         thresh = gray_roi.copy()
         #cv2.adaptiveThreshold(leftthresh, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 25, 25, leftthresh)
-        thresh = thresholdByPercentage(thresh, .075)
+        thresh = pupilIsolation.thresholdByPercentage(thresh, .075)
         
-        pupilCenter = findPointOnPupil(thresh)
+        pupilCenter = pupilIsolation.findPointOnPupil(thresh)
         cv2.circle(vis_roi, pupilCenter, 2, (255,0,0), -1)
         
         # get eye corner center x, y
@@ -239,6 +233,7 @@ def processFrame(img, facecascade, lefteyecascade, righteyecascade):
     eyesubrectsleft, eyesubrectsright = [], []
     eyesubrectleft, eyesubrectright = None, None
     leftEllipseBox, rightEllipseBox = None, None
+    gazeLoc = None
     
     
     try:
@@ -308,8 +303,8 @@ def processFrame(img, facecascade, lefteyecascade, righteyecascade):
             rightpupil = processEyeByCorners(eyesubrectright, vis_roiright_eye, gray_roiright_eye, vis, gray)
             
             if leftpupil != None and rightpupil != None:
-                leftyaw, leftpitch, rightyaw, rightpitch = getAnglesFromPupilRelativeCenter(leftpupil, rightpupil, dummyCalibrationPoints, fliplr=True)
-                gazeloc = findGazeLocation(leftyaw, leftpitch, rightyaw, rightpitch)
+                leftyaw, leftpitch, rightyaw, rightpitch = gazeFunctions.getAnglesFromPupilRelativeCenter(leftpupil, rightpupil, gazeFunctions.dummyCalibrationPoints, fliplr=True)
+                gazeloc = gazeFunctions.findGazeLocation(leftyaw, leftpitch, rightyaw, rightpitch)
                 print gazeloc
             
             
@@ -382,7 +377,8 @@ def processFrame(img, facecascade, lefteyecascade, righteyecascade):
 
     cv2.imshow('facedetect', vis)
     
-    return vis, gray, facerect, eyesubrectleft, eyesubrectright, leftEllipseBox, rightEllipseBox
+    #return vis, gray, facerect, eyesubrectleft, eyesubrectright, leftEllipseBox, rightEllipseBox
+    return vis, gray, facerect, eyesubrectleft, eyesubrectright, gazeLoc
 
 
 def writeline(f,line):
@@ -390,9 +386,6 @@ def writeline(f,line):
 
 
 def main():
-    import sys, getopt
-    print help_message
-
     args, video_src = getopt.getopt(sys.argv[1:], '', ['facecascade=', 'eyescascade-facecascade='])
     try: video_src = video_src[0]
     except: video_src = 0
@@ -431,15 +424,37 @@ def main():
         cam = cv2.VideoCapture(0)
     
         fileindex = 0
-    
+        
+        tabletDims = gazeFunctions.tabletDims
+        outimg = np.zeros((tabletDims['resolution']['height'],tabletDims['resolution']['width'],3),np.uint8)
+        
         while True:
             ret, img = cam.read()
             
-            vis, gray, facerect, eyesubrectleft, eyesubrectright, leftEllipseBox, rightEllipseBox = processFrame(img, facecascade, lefteyecascade, righteyecascade)
+            outimg[:] = 0
+            
+            #vis, gray, facerect, eyesubrectleft, eyesubrectright, leftEllipseBox, rightEllipseBox = processFrame(img, facecascade, lefteyecascade, righteyecascade)
+            vis, gray, facerect, eyesubrectleft, eyesubrectright, gazeLoc = processFrame(img, facecascade, lefteyecascade, righteyecascade)
+            
+            cv2.imshow('TabletScreen',outimg)
             
             #pdb.set_trace()
             
-            key = cv2.waitKey(1) & 0xff
+            
+            
+            
+            
+            
+            
+            
+            key = cv2.waitKey(1)
+            
+            
+            
+            
+            
+            
+            
             
             if key == ord('w'):
                 cv2.imwrite(str(fileindex)+'.png',img)
@@ -474,15 +489,4 @@ def main():
 if __name__ == '__main__':
     main()
     
-    #mousemove(50,50)
-    #time.sleep(1)
-    #mousemove(150,50)
-    #time.sleep(1)
-    #mousemove(50,150)
-    #time.sleep(1)
-    #mousemove(250,50)
-    #time.sleep(1)
-    #mousemove(50,250)
-    #time.sleep(1)
-    #mousemove(500,500)
     
