@@ -8,7 +8,7 @@ class Calibrator():
     yawSlope = None
     pitchSlope = None
     phase = 0
-    mode = 'DONE'
+    mode = 'DONE'   # choices: DONE, WAIT, CALIBRATE
     
     numTmpPts = 5
     tmpPts = []

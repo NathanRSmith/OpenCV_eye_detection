@@ -28,12 +28,12 @@ def main():
     tabletDims = gazeFunctions.tabletDims
     outimg = np.zeros((tabletDims['resolution']['height'],tabletDims['resolution']['width'],3),np.uint8)
     calib = Calibrator(gazeFunctions.calibrationInfo, outimg)
-    fp = FrameProcessor(facecascade, lefteyecascade, righteyecascade, tabletDims, outimg, calib, draw=False)
+    fp = FrameProcessor(facecascade, lefteyecascade, righteyecascade, tabletDims, outimg, calib, draw=True)
     
     calib.calibrationPoints = gazeFunctions.dummyCalibrationPoints
     
     
-    mode = 'CALIBRATION'
+    mode = 'STANDARD'    # choices: CALIBRATION, STANDARD
     
     fileindex = 0
     
@@ -42,7 +42,7 @@ def main():
         
         outimg[:] = 255
         
-        calib.drawCalibrationPoint()
+        #calib.drawCalibrationPoint()
         
         #vis, gray, facerect, eyesubrectleft, eyesubrectright, leftEllipseBox, rightEllipseBox = processFrame(img, facecascade, lefteyecascade, righteyecascade)
         vis, gray, facerect, eyesubrectleft, eyesubrectright, gazeLoc = fp.processFrame(img)
@@ -73,6 +73,9 @@ def main():
         elif key == ord('n'):
             if mode == 'CALIBRATION':
                 calib.setMode('CALIBRATE')
+        elif key == ord('c'):
+            if mode == 'STANDARD':
+                calib.setMode('WAIT')
         
         elif key == ord('w'):
             cv2.imwrite(str(fileindex)+'.png',img)

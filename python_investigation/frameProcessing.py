@@ -22,6 +22,8 @@ class FrameProcessor():
         
         
     def drawGazeLoc(self):
+        """Draw last gaze location
+        """
         if self.lastGazeLoc != None:
             cv2.circle(self.outimg, self.lastGazeLoc, 10, (255,0,0), -1)
         
