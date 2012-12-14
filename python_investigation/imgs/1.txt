@@ -1,0 +1,4 @@
+For image file 1.png:
+face rect: (423, 77) -> (958, 612)
+left eye rect: (107, 169) -> (215, 241)
+right eye rect: (59, 180) -> (160, 248)
