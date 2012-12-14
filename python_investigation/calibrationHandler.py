@@ -9,8 +9,9 @@ class Calibrator():
     pitchSlope = None
     phase = 0
     mode = 'DONE'   # choices: DONE, WAIT, CALIBRATE
+    message = ''
     
-    numTmpPts = 5
+    numTmpPts = 3
     tmpPts = []
     
     def __init__(self, calibrationInfo, outimg):
@@ -25,27 +26,44 @@ class Calibrator():
               self.calibrationInfo[self.phase]['screen_pos_y'])
         cv2.circle(self.outimg, pt, 8, (0,0,255), -1)
         cv2.circle(self.outimg, pt, 15, (0,0,255), 5)
+        self.drawMessage()
+    
+    def drawMessage(self):
+        if self.mode == 'WAIT':
+            cv2.putText(self.outimg, 'Press "n" while looking at the point', (100,300), cv2.FONT_HERSHEY_COMPLEX, 1, (0,255,0), 3)
+        elif self.mode == 'CALIBRATE':
+            cv2.putText(self.outimg, 'Continue looking at the point', (100,300), cv2.FONT_HERSHEY_COMPLEX, 1, (0,255,0), 3)
     
     def setMode(self, mode):
         self.mode = mode
-        if mode == 'CALIBRATE':
-            self.tmpPts = []
+        #if mode == 'CALIBRATE':
+        #    self.tmpPts = []
+    
+    def startCalibration(self):
+        self.mode = 'WAIT'
+        self.phase = 0
     
     def processPhase(self, lpt, rpt, fliplr=True):
         if fliplr == True:
-            tmp = lpt
-            lpt = rpt
-            rpt = tmp
+            ltmp = lpt
+            lpt = ((-1)*rpt[0], rpt[1])
+            rpt = ((-1)*ltmp[0], ltmp[1])
         if self.mode == 'CALIBRATE':
-            if len(self.tmpPts) < self.numTmpPts:
-                self.tmpPts.append({
-                    'left': lpt,
-                    'right': rpt,
-                })
+            #pdb.set_trace()
+            print 'Phase: %d' % self.phase
+            print 'tmppts: %d' % len(self.tmpPts)
+            print lpt, rpt
+            
+            self.tmpPts.append({
+                'left': lpt,
+                'right': rpt,
+            })
+            
             # average pts and move to next phase
-            else:
-                leftavg = []
-                rightavg = []
+            if len(self.tmpPts) == self.numTmpPts:
+                #pdb.set_trace()
+                leftavg = [0,0]
+                rightavg = [0,0]
                 for pt in self.tmpPts:
                     leftavg[0] += pt['left'][0]
                     leftavg[1] += pt['left'][1]
@@ -62,14 +80,14 @@ class Calibrator():
                 # append if pt not exist
                 if len(self.calibrationPoints) < self.phase+1:
                     self.calibrationPoints.append({
-                        'left': leftavg,
-                        'right': rightavg,
+                        'left_eye': tuple(leftavg),
+                        'right_eye': tuple(rightavg),
                     })
                 # overwrite if alreay exists
                 else:
                     self.calibrationPoints[self.phase] = {
-                        'left': leftavg,
-                        'right': rightavg,
+                        'left_eye': tuple(leftavg),
+                        'right_eye': tuple(rightavg),
                     }
                 self.tmpPts = []
                 
@@ -77,6 +95,7 @@ class Calibrator():
                 self.phase += 1
                 if self.phase == 4:
                     self.mode = 'DONE'
+                    print 'Calibration mode complete.'
                 else:
                     self.mode = 'WAIT'
                     print 'Press "n" while looking at the calibration point to continue to the next phase.'

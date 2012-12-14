@@ -52,6 +52,25 @@ dummyCalibrationPoints = [
     },
 ]
 
+#dummyCalibrationPoints = [
+#    {
+#        'right_eye': (-7.833333333333333, -6.166666666666667),
+#        'left_eye': (-0.16666666666666666, -7.666666666666667)
+#    },
+#    {
+#        'right_eye': (1.8333333333333333, -6.0),
+#        'left_eye': (5.5, -6.0)
+#    },
+#    {
+#        'right_eye': (-2.6666666666666665, -1.0),
+#        'left_eye': (2.0, -1.0)
+#    },
+#    {
+#        'right_eye': (-3.0, -5.666666666666667),
+#        'left_eye': (2.0, -6.3333333333333335)
+#    }
+#]
+
 calibrationInfo = [
     {
         'name': 'left', # left direction is actually right side of img

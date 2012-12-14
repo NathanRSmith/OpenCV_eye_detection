@@ -9,6 +9,7 @@ from calibrationHandler import Calibrator
 
 class FrameProcessor():
     lastGazeLoc = None
+    simulatormode = None
     
     def __init__(self, facecascade, lefteyecascade, righteyecascade, tabletDims, outimg, calib, draw=True):
         self.facecascade = facecascade
@@ -27,9 +28,10 @@ class FrameProcessor():
         if self.lastGazeLoc != None:
             cv2.circle(self.outimg, self.lastGazeLoc, 10, (255,0,0), -1)
         
-    def processFrame(self, img):
+    def processFrame(self, img, simulatormode):
         """Process a single frame.
         """
+        self.simulatormode = simulatormode
         facerect = None
         eyesubrectsleft, eyesubrectsright = [], []
         eyesubrectleft, eyesubrectright = None, None
@@ -91,11 +93,20 @@ class FrameProcessor():
             rightpupil = self._processEyeByCorners(eyesubrectright, vis_roiright_eye, gray_roiright_eye, vis, gray)
             
             if leftpupil != None and rightpupil != None:
-                leftyaw, leftpitch, rightyaw, rightpitch = gazeFunctions.getAnglesFromPupilRelativeCenter(leftpupil, rightpupil, self.calib.calibrationInfo, self.calib.calibrationPoints, fliplr=True)
-                gazeLoc = gazeFunctions.findGazeLocation(leftyaw, leftpitch, rightyaw, rightpitch)
-                if gazeLoc != None:
-                    self.lastGazeLoc = gazeLoc
-                    print gazeLoc
+                
+                #pdb.set_trace()
+                
+                # if in CALIBRATION mode
+                if self.simulatormode == 'CALIBRATION':
+                    self.calib.processPhase(leftpupil, rightpupil)
+                else:
+                    leftyaw, leftpitch, rightyaw, rightpitch = gazeFunctions.getAnglesFromPupilRelativeCenter(leftpupil, rightpupil, self.calib.calibrationInfo, self.calib.calibrationPoints, fliplr=True)
+                    gazeLoc = gazeFunctions.findGazeLocation(leftyaw, leftpitch, rightyaw, rightpitch)
+                    if gazeLoc != None:
+                        self.lastGazeLoc = gazeLoc
+                        print gazeLoc
+                    else:
+                        print 'Gazing offscreen'
                     
         except IndexError:
             pass

@@ -14,6 +14,8 @@ import gazeFunctions
 def main():
     ###### Setup ######
     
+    DRAW_OUTPUTS = True
+    
     # assume camera 0, webcam. Could also be a file name, etc.
     cam = cv2.VideoCapture(0)
     
@@ -28,12 +30,15 @@ def main():
     tabletDims = gazeFunctions.tabletDims
     outimg = np.zeros((tabletDims['resolution']['height'],tabletDims['resolution']['width'],3),np.uint8)
     calib = Calibrator(gazeFunctions.calibrationInfo, outimg)
-    fp = FrameProcessor(facecascade, lefteyecascade, righteyecascade, tabletDims, outimg, calib, draw=True)
+    fp = FrameProcessor(facecascade, lefteyecascade, righteyecascade, tabletDims, outimg, calib, draw=DRAW_OUTPUTS)
     
     calib.calibrationPoints = gazeFunctions.dummyCalibrationPoints
     
+    #mode = 'CALIBRATION'    # choices: CALIBRATION, STANDARD
+    mode = 'STANDARD'
     
-    mode = 'STANDARD'    # choices: CALIBRATION, STANDARD
+    if mode == 'CALIBRATION':
+        calib.startCalibration()
     
     fileindex = 0
     
@@ -42,30 +47,24 @@ def main():
         
         outimg[:] = 255
         
-        #calib.drawCalibrationPoint()
+        # display calibration stuff if in calibration mode
+        if mode == 'CALIBRATION':
+            if calib.mode == 'DONE':
+                mode = 'STANDARD'
+            else:
+                calib.drawCalibrationPoint()
         
-        #vis, gray, facerect, eyesubrectleft, eyesubrectright, leftEllipseBox, rightEllipseBox = processFrame(img, facecascade, lefteyecascade, righteyecascade)
-        vis, gray, facerect, eyesubrectleft, eyesubrectright, gazeLoc = fp.processFrame(img)
+        # process frame
+        vis, gray, facerect, eyesubrectleft, eyesubrectright, gazeLoc = fp.processFrame(img, mode)
+        
+        # draw last gaze location
         fp.drawGazeLoc()
         
-        
-        
+        # show the screen
         cv2.imshow('TabletScreen',outimg)
-        
-        #pdb.set_trace()
-        
-        
-        
-        
-        
-        
         
         
         key = cv2.waitKey(2)
-        
-        
-        
-        
         
         # pause
         if key == ord('p'):
@@ -74,8 +73,8 @@ def main():
             if mode == 'CALIBRATION':
                 calib.setMode('CALIBRATE')
         elif key == ord('c'):
-            if mode == 'STANDARD':
-                calib.setMode('WAIT')
+            mode == 'CALIBRATION'
+            calib.startCalibration()
         
         elif key == ord('w'):
             cv2.imwrite(str(fileindex)+'.png',img)
